@@ -858,7 +858,7 @@ const Reports = () => {
         </div>
         {/* ตารางข้อมูลนักศึกษา */}
         <div style={{ margin: '16px 0' }}>
-          <table border="1" cellPadding="4" cellSpacing="0" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <table border={1} cellPadding={4} cellSpacing={0} style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
               <tr style={{ background: '#eee' }}>
                 <th rowSpan={2}>ชั้นปี</th>
@@ -891,7 +891,7 @@ const Reports = () => {
         </div>
         {/* ตารางสุขภาพ */}
         <div style={{ margin: '16px 0' }}>
-          <table border="1" cellPadding="4" cellSpacing="0" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <table border={1} cellPadding={4} cellSpacing={0} style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
               <tr style={{ background: '#eee' }}>
                 <th>ชื่อ-สกุล</th>
