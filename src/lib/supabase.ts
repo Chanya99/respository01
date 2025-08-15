@@ -3,11 +3,19 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
+// Check if environment variables are set
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
+  console.error('❌ Missing Supabase environment variables:')
+  console.error('VITE_SUPABASE_URL:', supabaseUrl ? '✅ Set' : '❌ Missing')
+  console.error('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅ Set' : '❌ Missing')
+  console.error('📝 Please create a .env.local file with your Supabase credentials')
+  console.error('📖 See SUPABASE_SETUP.md for detailed instructions')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key'
+)
 
 // Types for our database tables
 export interface DutyReport {
@@ -37,6 +45,8 @@ export interface StudentData {
   total_count: number
   female_sign_out: number
   male_sign_out: number
+  female_emergency_stay: number
+  male_emergency_stay: number
   female_not_staying_out: number
   male_not_staying_out: number
   female_remaining: number

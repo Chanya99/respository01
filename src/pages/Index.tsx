@@ -67,6 +67,9 @@ const Index = () => {
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-primary opacity-20"></div>
+        {/* Decorative blobs */}
+        <div className="pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full bg-primary/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-accent/20 blur-3xl" />
         <motion.div 
           className="relative z-10 container mx-auto px-4 py-20"
           variants={itemVariants}
@@ -76,8 +79,8 @@ const Index = () => {
               className="flex justify-center mb-8"
               variants={iconVariants}
             >
-              <div className="w-24 h-24 bg-gradient-accent rounded-full flex items-center justify-center shadow-glow">
-                <Heart className="w-12 h-12 text-primary-foreground" />
+              <div className="w-36 h-36 md:w-44 md:h-44 rounded-2xl md:rounded-3xl bg-white/80 backdrop-blur ring-1 ring-white/50 shadow-glow flex items-center justify-center overflow-hidden">
+                <img src="/logo.png" alt="Logo" className="w-28 h-28 md:w-36 md:h-36 object-contain" />
               </div>
             </motion.div>
             
@@ -110,16 +113,16 @@ const Index = () => {
                 size="lg"
                 className="bg-gradient-primary hover:opacity-90 text-primary-foreground px-8 py-4 text-lg font-semibold shadow-elegant transition-all duration-300 hover:shadow-glow hover:scale-105"
               >
+                <FileText className="w-5 h-5 mr-2" />
                 เริ่มใช้งานระบบ
               </Button>
               <Button 
                 onClick={() => navigate("/reports")}
                 size="lg"
-                variant="outline"
-                className="border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-4 text-lg font-semibold shadow-elegant transition-all duration-300 hover:shadow-glow hover:scale-105"
+                className="bg-white text-primary border border-primary hover:bg-primary hover:text-primary-foreground px-8 py-4 text-lg font-semibold shadow-elegant transition-all duration-300 hover:shadow-glow hover:scale-105"
               >
                 <List className="w-5 h-5 mr-2" />
-                ดูรายงาน
+                ดูรายงานทั้งหมด
               </Button>
             
             </motion.div>
@@ -136,6 +139,10 @@ const Index = () => {
           className="text-center mb-16"
           variants={itemVariants}
         >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary mb-3">
+            <Database className="w-4 h-4" />
+            <span className="text-sm font-medium">คุณสมบัติ</span>
+          </div>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             คุณสมบัติของระบบ
           </h2>
@@ -146,7 +153,7 @@ const Index = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <motion.div variants={cardVariants} whileHover="hover">
-            <Card className="bg-gradient-secondary shadow-soft hover:shadow-elegant transition-all duration-300">
+            <Card className="backdrop-blur bg-white/40 dark:bg-white/10 border border-white/20 shadow-soft hover:shadow-elegant transition-all duration-300">
               <CardContent className="p-6 text-center">
                 <motion.div 
                   className="w-16 h-16 bg-gradient-accent rounded-full flex items-center justify-center mx-auto mb-4"
@@ -163,7 +170,7 @@ const Index = () => {
           </motion.div>
           
           <motion.div variants={cardVariants} whileHover="hover">
-            <Card className="bg-gradient-secondary shadow-soft hover:shadow-elegant transition-all duration-300">
+            <Card className="backdrop-blur bg-white/40 dark:bg-white/10 border border-white/20 shadow-soft hover:shadow-elegant transition-all duration-300">
               <CardContent className="p-6 text-center">
                 <motion.div 
                   className="w-16 h-16 bg-gradient-accent rounded-full flex items-center justify-center mx-auto mb-4"
@@ -180,7 +187,7 @@ const Index = () => {
           </motion.div>
           
           <motion.div variants={cardVariants} whileHover="hover">
-            <Card className="bg-gradient-secondary shadow-soft hover:shadow-elegant transition-all duration-300">
+            <Card className="backdrop-blur bg-white/40 dark:bg-white/10 border border-white/20 shadow-soft hover:shadow-elegant transition-all duration-300">
               <CardContent className="p-6 text-center">
                 <motion.div 
                   className="w-16 h-16 bg-gradient-accent rounded-full flex items-center justify-center mx-auto mb-4"
@@ -200,9 +207,10 @@ const Index = () => {
 
       {/* Call to Action */}
       <motion.div 
-        className="bg-gradient-primary py-20"
+        className="relative bg-gradient-primary py-20 overflow-hidden"
         variants={itemVariants}
       >
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
         <div className="container mx-auto px-4 text-center">
           <motion.h2 
             className="text-3xl md:text-4xl font-bold text-primary-foreground mb-6"
@@ -221,15 +229,15 @@ const Index = () => {
               onClick={() => navigate("/report")}
               size="lg"
               variant="secondary"
-              className="bg-background text-foreground hover:bg-background/90 px-8 py-4 text-lg font-semibold shadow-elegant transition-all duration-300 hover:scale-105"
+              className="bg-white/90 text-foreground hover:bg-white px-8 py-4 text-lg font-semibold shadow-elegant transition-all duration-300 hover:scale-105 backdrop-blur"
             >
+              <FileText className="w-5 h-5 mr-2" />
               เข้าสู่ระบบบันทึกเวรสุขภาพ
             </Button>
             <Button 
               onClick={() => navigate("/reports")}
               size="lg"
-              variant="outline"
-              className="border-2 border-background text-background hover:bg-background hover:text-foreground px-8 py-4 text-lg font-semibold shadow-elegant transition-all duration-300 hover:scale-105"
+              className="bg-white text-primary border border-primary hover:bg-primary hover:text-primary-foreground px-8 py-4 text-lg font-semibold shadow-elegant transition-all duration-300 hover:scale-105 backdrop-blur"
             >
               <List className="w-5 h-5 mr-2" />
               ดูรายงานทั้งหมด

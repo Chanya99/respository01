@@ -25,6 +25,8 @@ interface StudentData {
   totalCount: number;
   femaleSignOut: number;
   maleSignOut: number;
+  femaleEmergencyStay: number;
+  maleEmergencyStay: number;
   femaleNotStayingOut: number;
   maleNotStayingOut: number;
   femaleRemaining: number;
@@ -65,10 +67,10 @@ const ReportForm = () => {
   });
 
   const [studentData, setStudentData] = useState<StudentData[]>([
-    { year: "1", femaleCount: 0, maleCount: 0, totalCount: 0, femaleSignOut: 0, maleSignOut: 0, femaleNotStayingOut: 0, maleNotStayingOut: 0, femaleRemaining: 0, maleRemaining: 0 },
-    { year: "2", femaleCount: 0, maleCount: 0, totalCount: 0, femaleSignOut: 0, maleSignOut: 0, femaleNotStayingOut: 0, maleNotStayingOut: 0, femaleRemaining: 0, maleRemaining: 0 },
-    { year: "3", femaleCount: 0, maleCount: 0, totalCount: 0, femaleSignOut: 0, maleSignOut: 0, femaleNotStayingOut: 0, maleNotStayingOut: 0, femaleRemaining: 0, maleRemaining: 0 },
-    { year: "4", femaleCount: 0, maleCount: 0, totalCount: 0, femaleSignOut: 0, maleSignOut: 0, femaleNotStayingOut: 0, maleNotStayingOut: 0, femaleRemaining: 0, maleRemaining: 0 }
+    { year: "1", femaleCount: 0, maleCount: 0, totalCount: 0, femaleSignOut: 0, maleSignOut: 0, femaleEmergencyStay: 0, maleEmergencyStay: 0, femaleNotStayingOut: 0, maleNotStayingOut: 0, femaleRemaining: 0, maleRemaining: 0 },
+    { year: "2", femaleCount: 0, maleCount: 0, totalCount: 0, femaleSignOut: 0, maleSignOut: 0, femaleEmergencyStay: 0, maleEmergencyStay: 0, femaleNotStayingOut: 0, maleNotStayingOut: 0, femaleRemaining: 0, maleRemaining: 0 },
+    { year: "3", femaleCount: 0, maleCount: 0, totalCount: 0, femaleSignOut: 0, maleSignOut: 0, femaleEmergencyStay: 0, maleEmergencyStay: 0, femaleNotStayingOut: 0, maleNotStayingOut: 0, femaleRemaining: 0, maleRemaining: 0 },
+    { year: "4", femaleCount: 0, maleCount: 0, totalCount: 0, femaleSignOut: 0, maleSignOut: 0, femaleEmergencyStay: 0, maleEmergencyStay: 0, femaleNotStayingOut: 0, maleNotStayingOut: 0, femaleRemaining: 0, maleRemaining: 0 }
   ]);
 
   const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([
@@ -76,7 +78,10 @@ const ReportForm = () => {
   ]);
 
   const [teacherOptions, setTeacherOptions] = useState<string[]>([]);
+  const DEFAULT_POSITION = 'อาจารย์ผู้ดูแลหอ';
   const [dormitoryOther, setDormitoryOther] = useState("");
+  const DORMITORY_OPTIONS = ['หอพักชมจันทร์', 'หอพักพุทธรักษา', 'หอราชาวดี', 'อื่น ๆ'];
+  const [selectedDormOption, setSelectedDormOption] = useState<string>("");
 
   useEffect(() => {
     // ดึงชื่ออาจารย์เวรที่เคยกรอก (distinct)
@@ -116,20 +121,51 @@ const ReportForm = () => {
         directorSignature: report.director_signature || ""
       });
 
+      // จัดการค่า 'หอพัก' กรณีมีค่าที่ไม่อยู่ในรายการ ให้เลือกเป็น "อื่น ๆ" และใส่ค่าเดิมในช่องกรอก
+      const dorm = (report.dormitory || '').trim();
+      if (dorm) {
+        if (DORMITORY_OPTIONS.includes(dorm)) {
+          setSelectedDormOption(dorm);
+          if (dorm !== 'อื่น ๆ') setDormitoryOther("");
+        } else {
+          setSelectedDormOption('อื่น ๆ');
+          setDormitoryOther(dorm);
+        }
+      } else {
+        setSelectedDormOption("");
+        setDormitoryOther("");
+      }
+
       // เติมข้อมูลนักศึกษา
       if (report.student_data && report.student_data.length > 0) {
-        const formattedStudentData = report.student_data.map((data: any) => ({
-          year: data.year,
-          femaleCount: data.female_count || 0,
-          maleCount: data.male_count || 0,
-          totalCount: data.total_count || 0,
-          femaleSignOut: data.female_sign_out || 0,
-          maleSignOut: data.male_sign_out || 0,
-          femaleNotStayingOut: data.female_not_staying_out || 0,
-          maleNotStayingOut: data.male_not_staying_out || 0,
-          femaleRemaining: data.female_remaining || 0,
-          maleRemaining: data.male_remaining || 0
-        }));
+        const toNum = (v: any) => Number(v ?? 0) || 0;
+        const formattedStudentData = report.student_data.map((data: any) => {
+          const femaleCount = toNum(data.female_count);
+          const maleCount = toNum(data.male_count);
+          const totalCount = femaleCount + maleCount; // recompute
+          const femaleSignOut = toNum(data.female_sign_out);
+          const maleSignOut = toNum(data.male_sign_out);
+          const femaleEmergencyStay = toNum(data.female_emergency_stay);
+          const maleEmergencyStay = toNum(data.male_emergency_stay);
+          const femaleNotStayingOut = toNum(data.female_not_staying_out);
+          const maleNotStayingOut = toNum(data.male_not_staying_out);
+          const femaleRemaining = femaleCount - femaleSignOut - femaleEmergencyStay - femaleNotStayingOut; // recompute
+          const maleRemaining = maleCount - maleSignOut - maleEmergencyStay - maleNotStayingOut; // recompute
+          return {
+            year: String(data.year ?? ''),
+            femaleCount,
+            maleCount,
+            totalCount,
+            femaleSignOut,
+            maleSignOut,
+            femaleEmergencyStay,
+            maleEmergencyStay,
+            femaleNotStayingOut,
+            maleNotStayingOut,
+            femaleRemaining,
+            maleRemaining,
+          };
+        });
         setStudentData(formattedStudentData);
       }
 
@@ -150,17 +186,148 @@ const ReportForm = () => {
 
   const updateStudentData = (index: number, field: keyof StudentData, value: number) => {
     const newData = [...studentData];
-    newData[index] = { ...newData[index], [field]: value };
-    
+    const prevRow = { ...newData[index] };
+    const prevValue = (newData[index] as any)[field];
+    (newData[index] as any)[field] = value;
+
+    // Per-gender guards: each female/male field cannot exceed its gender count,
+    // and the sum of female-only or male-only category fields cannot exceed its gender count
+    const femaleCount = newData[index].femaleCount || 0;
+    const maleCount = newData[index].maleCount || 0;
+
+    const femaleFields: (keyof StudentData)[] = ['femaleSignOut', 'femaleEmergencyStay', 'femaleNotStayingOut'];
+    const maleFields: (keyof StudentData)[] = ['maleSignOut', 'maleEmergencyStay', 'maleNotStayingOut'];
+
+    const isFemaleField = femaleFields.includes(field);
+    const isMaleField = maleFields.includes(field);
+
+    if (isFemaleField) {
+      // individual field bound
+      if (((newData[index] as any)[field] || 0) > femaleCount) {
+        Swal.fire({
+          icon: 'error',
+          title: 'ใส่จำนวนไม่ถูกต้อง',
+          text: 'จำนวนที่กรอก (หญิง) เกินกว่าจำนวนนักศึกษาหญิงในแถวนั้น',
+          confirmButtonColor: '#ec4899'
+        });
+        (newData[index] as any)[field] = prevValue;
+      }
+      // female category sum bound
+      const femaleSum =
+        (newData[index].femaleSignOut || 0) +
+        (newData[index].femaleEmergencyStay || 0) +
+        (newData[index].femaleNotStayingOut || 0);
+      if (femaleSum > femaleCount) {
+        Swal.fire({
+          icon: 'error',
+          title: 'ใส่จำนวนไม่ถูกต้อง',
+          text: 'ผลรวมช่อง (หญิง) เกินกว่าจำนวนนักศึกษาหญิงในแถวนั้น',
+          confirmButtonColor: '#ec4899'
+        });
+        (newData[index] as any)[field] = prevValue;
+      }
+    }
+
+    if (isMaleField) {
+      // individual field bound
+      if (((newData[index] as any)[field] || 0) > maleCount) {
+        Swal.fire({
+          icon: 'error',
+          title: 'ใส่จำนวนไม่ถูกต้อง',
+          text: 'จำนวนที่กรอก (ชาย) เกินกว่าจำนวนนักศึกษาชายในแถวนั้น',
+          confirmButtonColor: '#ec4899'
+        });
+        (newData[index] as any)[field] = prevValue;
+      }
+      // male category sum bound
+      const maleSum =
+        (newData[index].maleSignOut || 0) +
+        (newData[index].maleEmergencyStay || 0) +
+        (newData[index].maleNotStayingOut || 0);
+      if (maleSum > maleCount) {
+        Swal.fire({
+          icon: 'error',
+          title: 'ใส่จำนวนไม่ถูกต้อง',
+          text: 'ผลรวมช่อง (ชาย) เกินกว่าจำนวนนักศึกษาชายในแถวนั้น',
+          confirmButtonColor: '#ec4899'
+        });
+        (newData[index] as any)[field] = prevValue;
+      }
+    }
+
     // Auto calculate totals and remaining
     if (field === 'femaleCount' || field === 'maleCount') {
       newData[index].totalCount = newData[index].femaleCount + newData[index].maleCount;
     }
-    if (field === 'femaleSignOut' || field === 'maleSignOut' || field === 'femaleNotStayingOut' || field === 'maleNotStayingOut' || field === 'femaleCount' || field === 'maleCount') {
-      newData[index].femaleRemaining = newData[index].femaleCount - newData[index].femaleSignOut - newData[index].femaleNotStayingOut;
-      newData[index].maleRemaining = newData[index].maleCount - newData[index].maleSignOut - newData[index].maleNotStayingOut;
+    if (
+      field === 'femaleCount' || field === 'maleCount' ||
+      field === 'femaleSignOut' || field === 'maleSignOut' ||
+      field === 'femaleEmergencyStay' || field === 'maleEmergencyStay' ||
+      field === 'femaleNotStayingOut' || field === 'maleNotStayingOut'
+    ) {
+      newData[index].femaleRemaining =
+        newData[index].femaleCount -
+        newData[index].femaleSignOut -
+        newData[index].femaleEmergencyStay -
+        newData[index].femaleNotStayingOut;
+      newData[index].maleRemaining =
+        newData[index].maleCount -
+        newData[index].maleSignOut -
+        newData[index].maleEmergencyStay -
+        newData[index].maleNotStayingOut;
     }
-    
+
+    // Validate: Sum of category columns must not exceed totalCount
+    const isCategoryField = (
+      field === 'femaleSignOut' || field === 'maleSignOut' ||
+      field === 'femaleEmergencyStay' || field === 'maleEmergencyStay' ||
+      field === 'femaleNotStayingOut' || field === 'maleNotStayingOut'
+    );
+    if (isCategoryField) {
+      const total = newData[index].totalCount;
+      const catSum =
+        (newData[index].femaleSignOut || 0) +
+        (newData[index].maleSignOut || 0) +
+        (newData[index].femaleEmergencyStay || 0) +
+        (newData[index].maleEmergencyStay || 0) +
+        (newData[index].femaleNotStayingOut || 0) +
+        (newData[index].maleNotStayingOut || 0);
+      if (total <= 0) {
+        // Require entering female/male counts first
+        Swal.fire({
+          icon: 'warning',
+          title: `แถวชั้นปี ${newData[index].year}: โปรดกรอกจำนวนนักศึกษาหญิงและชายก่อน`,
+          text: 'กรุณาใส่จำนวนหญิง/ชาย ให้รวมกันมากกว่า 0 ก่อนกรอกคอลัมน์ด้านขวา',
+          confirmButtonColor: '#ec4899'
+        });
+        // revert
+        (newData[index] as any)[field] = prevValue;
+      } else if (catSum > total) {
+        const detail = `หญิง:${newData[index].femaleSignOut + newData[index].femaleEmergencyStay + newData[index].femaleNotStayingOut} ` +
+                       `ชาย:${newData[index].maleSignOut + newData[index].maleEmergencyStay + newData[index].maleNotStayingOut} ` +
+                       `(รวม:${catSum}) > ทั้งหมด:${total}`;
+        Swal.fire({
+          icon: 'error',
+          title: `แถวชั้นปี ${newData[index].year}: ใส่จำนวนไม่ถูกต้อง` ,
+          text: `ผลรวมของช่องด้านขวาเกินจำนวนนักศึกษาทั้งหมดของแถวนั้น\n${detail}`,
+          confirmButtonColor: '#ec4899'
+        });
+        // revert
+        (newData[index] as any)[field] = prevValue;
+        // Recompute remaining after revert
+        newData[index].femaleRemaining =
+          newData[index].femaleCount -
+          newData[index].femaleSignOut -
+          newData[index].femaleEmergencyStay -
+          newData[index].femaleNotStayingOut;
+        newData[index].maleRemaining =
+          newData[index].maleCount -
+          newData[index].maleSignOut -
+          newData[index].maleEmergencyStay -
+          newData[index].maleNotStayingOut;
+      }
+    }
+
     setStudentData(newData);
   };
 
@@ -193,6 +360,89 @@ const ReportForm = () => {
         throw new Error('กรุณากรอกชื่ออาจารย์เวรและวันที่ให้ครบถ้วน');
       }
 
+      // Normalize student rows to numbers and recompute derived fields
+      const norm = studentData.map((r) => {
+        const femaleCount = Number(r.femaleCount || 0);
+        const maleCount = Number(r.maleCount || 0);
+        const totalCount = femaleCount + maleCount;
+        const femaleSignOut = Number(r.femaleSignOut || 0);
+        const maleSignOut = Number(r.maleSignOut || 0);
+        const femaleEmergencyStay = Number(r.femaleEmergencyStay || 0);
+        const maleEmergencyStay = Number(r.maleEmergencyStay || 0);
+        const femaleNotStayingOut = Number(r.femaleNotStayingOut || 0);
+        const maleNotStayingOut = Number(r.maleNotStayingOut || 0);
+        const femaleRemaining = femaleCount - femaleSignOut - femaleEmergencyStay - femaleNotStayingOut;
+        const maleRemaining = maleCount - maleSignOut - maleEmergencyStay - maleNotStayingOut;
+        return {
+          year: r.year,
+          femaleCount,
+          maleCount,
+          totalCount,
+          femaleSignOut,
+          maleSignOut,
+          femaleEmergencyStay,
+          maleEmergencyStay,
+          femaleNotStayingOut,
+          maleNotStayingOut,
+          femaleRemaining,
+          maleRemaining,
+        } as StudentData;
+      });
+
+      // Validate student rows: require female/male first and categories sum must equal total
+      for (let i = 0; i < norm.length; i++) {
+        const r = norm[i];
+        const total = (r.femaleCount || 0) + (r.maleCount || 0);
+        const catSum =
+          (r.femaleSignOut || 0) +
+          (r.maleSignOut || 0) +
+          (r.femaleEmergencyStay || 0) +
+          (r.maleEmergencyStay || 0) +
+          (r.femaleNotStayingOut || 0) +
+          (r.maleNotStayingOut || 0);
+        if (total <= 0) {
+          throw new Error(`แถวชั้นปี ${r.year}: โปรดกรอกจำนวนนักศึกษาหญิงและชายก่อน`);
+        }
+        const femaleSum =
+          (r.femaleSignOut || 0) +
+          (r.femaleEmergencyStay || 0) +
+          (r.femaleNotStayingOut || 0);
+        const maleSum =
+          (r.maleSignOut || 0) +
+          (r.maleEmergencyStay || 0) +
+          (r.maleNotStayingOut || 0);
+        if (femaleSum > (r.femaleCount || 0)) {
+          throw new Error(`แถวชั้นปี ${r.year}: ผลรวมช่อง (หญิง) เกินจำนวนนักศึกษาหญิงทั้งหมด`);
+        }
+        if (maleSum > (r.maleCount || 0)) {
+          throw new Error(`แถวชั้นปี ${r.year}: ผลรวมช่อง (ชาย) เกินจำนวนนักศึกษาชายทั้งหมด`);
+        }
+        if ((r.femaleSignOut || 0) > (r.femaleCount || 0)) {
+          throw new Error(`แถวชั้นปี ${r.year}: จำนวนนักศึกษาที่เซ็นออก (หญิง) เกินกว่าจำนวนนักศึกษาหญิงทั้งหมด`);
+        }
+        if ((r.maleSignOut || 0) > (r.maleCount || 0)) {
+          throw new Error(`แถวชั้นปี ${r.year}: จำนวนนักศึกษาที่เซ็นออก (ชาย) เกินกว่าจำนวนนักศึกษาชายทั้งหมด`);
+        }
+        if (catSum > total) {
+          throw new Error(`แถวชั้นปี ${r.year}: ผลรวมช่องด้านขวา (${catSum}) เกินจำนวนนักศึกษาทั้งหมด (${total})`);
+        }
+        if (catSum !== total) {
+          throw new Error(`แถวชั้นปี ${r.year}: ผลรวมช่องด้านขวา (${catSum}) ต้องเท่ากับจำนวนนักศึกษาทั้งหมด (${total})`);
+        }
+      }
+
+      // Check Supabase connection first
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error('❌ ไม่พบการตั้งค่า Supabase\nกรุณาสร้างไฟล์ .env.local และตั้งค่า VITE_SUPABASE_URL และ VITE_SUPABASE_ANON_KEY\nดูคำแนะนำใน SUPABASE_SETUP.md');
+      }
+
+      if (supabaseUrl === 'your_supabase_project_url' || supabaseKey === 'your_supabase_anon_key') {
+        throw new Error('❌ กรุณาเปลี่ยนค่า Supabase URL และ Key ให้เป็นค่าจริง\nไม่ใช่ค่า placeholder');
+      }
+
       Swal.fire({
         title: isEditing ? 'กำลังอัปเดตข้อมูล...' : 'กำลังบันทึกข้อมูล...',
         text: 'กรุณารอสักครู่',
@@ -203,6 +453,8 @@ const ReportForm = () => {
       });
 
       console.log('🔍 เริ่มบันทึกข้อมูลลง Supabase...');
+      console.log('🌐 Supabase URL:', supabaseUrl);
+      console.log('🔑 Supabase Key:', supabaseKey ? '✅ มีค่า' : '❌ ไม่มีค่า');
       console.log('📊 ข้อมูลรายงาน:', reportData);
       console.log('👥 ข้อมูลนักศึกษา:', studentData);
       console.log('🏥 ข้อมูลสุขภาพ:', healthRecords);
@@ -217,15 +469,15 @@ const ReportForm = () => {
           .update({
             date: reportData.date,
             teacher_name: reportData.teacherName,
-            start_time: reportData.startTime,
-            end_time: reportData.endTime,
-            replacing_teacher: reportData.replacingTeacher,
+            start_time: (reportData.startTime || '').trim() || '18.00',
+            end_time: (reportData.endTime || '').trim() || '06.00',
+            replacing_teacher: (reportData.replacingTeacher || '').trim() || '',
             dormitory: reportData.dormitory,
             cleanliness_good: reportData.cleanlinessGood,
             cleanliness_need_improvement: reportData.cleanlinessNeedImprovement,
             student_behavior: reportData.studentBehavior,
             teacher_signature: reportData.teacherSignature,
-            teacher_position: reportData.teacherPosition,
+            teacher_position: (reportData.teacherPosition || '').trim() || DEFAULT_POSITION,
             deputy_director_signature: reportData.deputyDirectorSignature,
             director_signature: reportData.directorSignature
           })
@@ -252,15 +504,15 @@ const ReportForm = () => {
           .insert({
             date: reportData.date,
             teacher_name: reportData.teacherName,
-            start_time: reportData.startTime,
-            end_time: reportData.endTime,
-            replacing_teacher: reportData.replacingTeacher,
+            start_time: (reportData.startTime || '').trim() || '18.00',
+            end_time: (reportData.endTime || '').trim() || '06.00',
+            replacing_teacher: (reportData.replacingTeacher || '').trim() || '',
             dormitory: reportData.dormitory,
             cleanliness_good: reportData.cleanlinessGood,
             cleanliness_need_improvement: reportData.cleanlinessNeedImprovement,
             student_behavior: reportData.studentBehavior,
             teacher_signature: reportData.teacherSignature,
-            teacher_position: reportData.teacherPosition,
+            teacher_position: (reportData.teacherPosition || '').trim() || DEFAULT_POSITION,
             deputy_director_signature: reportData.deputyDirectorSignature,
             director_signature: reportData.directorSignature
           })
@@ -278,7 +530,7 @@ const ReportForm = () => {
 
             // Insert student data
       console.log('👥 บันทึกข้อมูลนักศึกษา...');
-      const studentDataToInsert = studentData.map(data => ({
+      const studentDataToInsert = norm.map(data => ({
         report_id: reportId,
         year: data.year,
         female_count: data.femaleCount,
@@ -286,6 +538,8 @@ const ReportForm = () => {
         total_count: data.totalCount,
         female_sign_out: data.femaleSignOut,
         male_sign_out: data.maleSignOut,
+        female_emergency_stay: data.femaleEmergencyStay,
+        male_emergency_stay: data.maleEmergencyStay,
         female_not_staying_out: data.femaleNotStayingOut,
         male_not_staying_out: data.maleNotStayingOut,
         female_remaining: data.femaleRemaining,
@@ -442,10 +696,10 @@ const ReportForm = () => {
         <motion.div variants={cardVariants}>
         <Card className="mb-6 shadow-elegant">
           <CardHeader className="bg-gradient-primary text-primary-foreground rounded-t-lg">
-            <CardTitle className="text-center text-2xl font-bold">
+            <CardTitle className="text-center text-2xl font-bold text-blue-500">
               วิทยาลัยพยาบาลบรมราชชนนี อุดรธานี
             </CardTitle>
-              <p className="text-center text-lg">
+              <p className="text-center text-lg text-blue-500">
                 {isEditing ? 'แก้ไขรายงานสรุปผลการปฏิบัติหน้าที่ของอาจารย์เวร' : 'รายงานสรุปผลการปฏิบัติหน้าที่ของอาจารย์เวร'}
               </p>
           </CardHeader>
@@ -458,6 +712,19 @@ const ReportForm = () => {
                   type="date"
                   value={reportData.date}
                   onChange={(e) => setReportData(prev => ({ ...prev, date: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="teacherPosition">ตำแหน่ง</Label>
+                <Input
+                  id="teacherPosition"
+                  placeholder="ไม่กรอกจะใช้: อาจารย์ผู้ดูแลหอ"
+                  value={reportData.teacherPosition}
+                  onChange={(e) => setReportData(prev => ({ ...prev, teacherPosition: e.target.value }))}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (!v) setReportData(prev => ({ ...prev, teacherPosition: DEFAULT_POSITION }));
+                  }}
                 />
               </div>
               <div>
@@ -489,6 +756,10 @@ const ReportForm = () => {
                   placeholder="เช่น 18.00"
                   value={reportData.startTime}
                   onChange={(e) => setReportData(prev => ({ ...prev, startTime: e.target.value }))}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    setReportData(prev => ({ ...prev, startTime: v || '18.00' }));
+                  }}
                 />
               </div>
               <div>
@@ -498,24 +769,30 @@ const ReportForm = () => {
                   placeholder="เช่น 06.00"
                   value={reportData.endTime}
                   onChange={(e) => setReportData(prev => ({ ...prev, endTime: e.target.value }))}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    setReportData(prev => ({ ...prev, endTime: v || '06.00' }));
+                  }}
                 />
               </div>
               <div>
                 <Label htmlFor="replacingTeacher">แทนอาจารย์</Label>
                 <Input
                   id="replacingTeacher"
-                  placeholder="กรุณากรอกชื่ออาจารย์ที่แทน"
+                  placeholder="ถ้าไม่มี ให้เว้นว่าง"
                   value={reportData.replacingTeacher}
                   onChange={(e) => setReportData(prev => ({ ...prev, replacingTeacher: e.target.value }))}
+                  onBlur={(e) => setReportData(prev => ({ ...prev, replacingTeacher: e.target.value.trim() }))}
                 />
               </div>
               <div>
                 <Label htmlFor="dormitory">หอพัก</Label>
                   <Select
-                    value={reportData.dormitory === "อื่น ๆ" ? "อื่น ๆ" : reportData.dormitory}
+                    value={selectedDormOption}
                     onValueChange={(value) => {
-                      if (value === "อื่น ๆ") {
-                        setReportData(prev => ({ ...prev, dormitory: value }));
+                      setSelectedDormOption(value);
+                      if (value === 'อื่น ๆ') {
+                        setReportData(prev => ({ ...prev, dormitory: (dormitoryOther || '').trim() }));
                       } else {
                         setReportData(prev => ({ ...prev, dormitory: value }));
                         setDormitoryOther("");
@@ -532,7 +809,7 @@ const ReportForm = () => {
                       <SelectItem value="อื่น ๆ">อื่น ๆ</SelectItem>
                     </SelectContent>
                   </Select>
-                  {reportData.dormitory === "อื่น ๆ" && (
+                  {selectedDormOption === "อื่น ๆ" && (
                 <Input
                       className="mt-2"
                       placeholder="กรอกชื่อหอพัก..."
@@ -556,33 +833,36 @@ const ReportForm = () => {
             <CardTitle>1. รายงานจำนวนนักศึกษาที่พักอาศัยอยู่ในหอพักของวิทยาลัย</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-border">
+                          <div className="overflow-x-auto">
+                <table className="w-full border-collapse" style={{ border: '2px solid #000000', borderCollapse: 'collapse' }}>
+                {/* Table Header - Perfect Match to Image */}
                 <thead>
-                  <tr className="bg-secondary">
-                    <th rowSpan={3} className="border border-border p-2">ชั้นปีที่/รุ่นที่</th>
-                    <th rowSpan={3} className="border border-border p-2">จำนวนนักศึกษาหญิง</th>
-                    <th rowSpan={3} className="border border-border p-2">จำนวนนักศึกษาชาย</th>
-                    <th rowSpan={3} className="border border-border p-2">จำนวนนักศึกษาทั้งหมด</th>
-                    <th colSpan={4} className="border border-border p-2">จำนวนนักศึกษาที่เซ็นออกหอพัก</th>
-                    <th colSpan={2} className="border border-border p-2">จำนวนนักศึกษาคงเหลือในหอพัก</th>
-                    <th rowSpan={3} className="border border-border p-2">รวมจำนวนนักศึกษาคงเหลือในหอพัก</th>
+                  {/* First Header Row - Main headers with rowSpan=3 */}
+                  <tr style={{ backgroundColor: '#e5e7eb' }}>
+                    <th rowSpan={3} className="p-2 text-center" style={{ backgroundColor: '#e5e7eb', fontWeight: 'bold', border: '1px solid #000000', verticalAlign: 'middle', fontSize: '14px', padding: '8px', textAlign: 'center' }}>ชั้นปีที่/รุ่นที่</th>
+                    <th rowSpan={3} className="p-2 text-center" style={{ backgroundColor: '#e5e7eb', fontWeight: 'bold', border: '1px solid #000000', verticalAlign: 'middle', fontSize: '14px', padding: '8px', textAlign: 'center' }}>จำนวนนักศึกษาหญิง</th>
+                    <th rowSpan={3} className="p-2 text-center" style={{ backgroundColor: '#e5e7eb', fontWeight: 'bold', border: '1px solid #000000', verticalAlign: 'middle', fontSize: '14px', padding: '8px', textAlign: 'center' }}>จำนวนนักศึกษาชาย</th>
+                    <th rowSpan={3} className="p-2 text-center" style={{ backgroundColor: '#e5e7eb', fontWeight: 'bold', border: '1px solid #000000', verticalAlign: 'middle', fontSize: '14px', padding: '8px', textAlign: 'center' }}>จำนวนนักศึกษาทั้งหมด</th>
+                    <th colSpan={6} className="p-2 text-center" style={{ backgroundColor: '#e5e7eb', fontWeight: 'bold', border: '1px solid #000000', verticalAlign: 'middle', fontSize: '14px', padding: '8px', textAlign: 'center' }}>จำนวนนักศึกษาที่เซ็นออกหอพัก</th>
+                    <th rowSpan={3} className="p-2 text-center" style={{ backgroundColor: '#e5e7eb', fontWeight: 'bold', border: '1px solid #000000', verticalAlign: 'middle', fontSize: '14px', padding: '8px', textAlign: 'center' }}>รวมจำนวนนักศึกษาคงเหลือในหอพัก</th>
                   </tr>
-                  <tr className="bg-secondary">
-                    <th colSpan={2} className="border border-border p-2">พักค้างคืน</th>
-                    <th colSpan={2} className="border border-border p-2">ไม่พักค้างคืน</th>
-                    <th colSpan={2} className="border border-border p-2"></th>
+                  {/* Second Header Row - Sub-categories with colSpan=2 */}
+                  <tr style={{ backgroundColor: '#d1d5db' }}>
+                    <th colSpan={2} className="p-2 text-center" style={{ backgroundColor: '#d1d5db', fontWeight: 'bold', border: '1px solid #000000', verticalAlign: 'middle', fontSize: '14px', padding: '8px', textAlign: 'center' }}>พักค้างคืน</th>
+                    <th colSpan={2} className="p-2 text-center" style={{ backgroundColor: '#d1d5db', fontWeight: 'bold', border: '1px solid #000000', verticalAlign: 'middle', fontSize: '14px', padding: '8px', textAlign: 'center' }}>พักค้างคืนกรณีฉุกเฉิน</th>
+                    <th colSpan={2} className="p-2 text-center" style={{ backgroundColor: '#d1d5db', fontWeight: 'bold', border: '1px solid #000000', verticalAlign: 'middle', fontSize: '14px', padding: '8px', textAlign: 'center' }}>ไม่พักค้างคืน</th>
                   </tr>
-                  <tr className="bg-secondary">
-                      <th className="border border-border p-2 px-6">หญิง</th>
-                      <th className="border border-border p-2 px-6">ชาย</th>
-                    <th className="border border-border p-2">หญิง</th>
-                    <th className="border border-border p-2">ชาย</th>
-                    <th className="border border-border p-2">หญิง</th>
-                    <th className="border border-border p-2">ชาย</th>
+                  {/* Third Header Row - Individual gender columns */}
+                  <tr style={{ backgroundColor: '#9ca3af' }}>
+                    <th className="p-2 text-center" style={{ backgroundColor: '#9ca3af', fontWeight: 'bold', border: '1px solid #000000', verticalAlign: 'middle', fontSize: '14px', padding: '8px', textAlign: 'center' }}>หญิง</th>
+                    <th className="p-2 text-center" style={{ backgroundColor: '#9ca3af', fontWeight: 'bold', border: '1px solid #000000', verticalAlign: 'middle', fontSize: '14px', padding: '8px', textAlign: 'center' }}>ชาย</th>
+                    <th className="p-2 text-center" style={{ backgroundColor: '#9ca3af', fontWeight: 'bold', border: '1px solid #000000', verticalAlign: 'middle', fontSize: '14px', padding: '8px', textAlign: 'center' }}>หญิง</th>
+                    <th className="p-2 text-center" style={{ backgroundColor: '#9ca3af', fontWeight: 'bold', border: '1px solid #000000', verticalAlign: 'middle', fontSize: '14px', padding: '8px', textAlign: 'center' }}>ชาย</th>
+                    <th className="p-2 text-center" style={{ backgroundColor: '#9ca3af', fontWeight: 'bold', border: '1px solid #000000', verticalAlign: 'middle', fontSize: '14px', padding: '8px', textAlign: 'center' }}>หญิง</th>
+                    <th className="p-2 text-center" style={{ backgroundColor: '#9ca3af', fontWeight: 'bold', border: '1px solid #000000', verticalAlign: 'middle', fontSize: '14px', padding: '8px', textAlign: 'center' }}>ชาย</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody style={{ backgroundColor: '#ffffff' }}>
                   {studentData.map((data, index) => (
                       <motion.tr 
                         key={index}
@@ -590,74 +870,104 @@ const ReportForm = () => {
                         initial="hidden"
                         animate="visible"
                       >
-                      <td className="border border-border p-2 text-center font-medium">{data.year}</td>
-                      <td className="border border-border p-2">
+                      <td className="p-2 text-center font-medium" style={{ border: '1px solid #000000', backgroundColor: '#ffffff', padding: '8px', fontSize: '14px' }}>{data.year}</td>
+                      <td className="p-2" style={{ border: '1px solid #000000', backgroundColor: '#ffffff', padding: '8px' }}>
                         <Input
                           type="number"
                           min="0"
                           value={data.femaleCount || ''}
                           onChange={(e) => updateStudentData(index, 'femaleCount', parseInt(e.target.value) || 0)}
                           className="text-center"
+                          style={{ border: 'none', background: 'transparent', textAlign: 'center', width: '100%', fontSize: '14px' }}
                         />
                       </td>
-                      <td className="border border-border p-2">
+                      <td className="p-2" style={{ border: '1px solid #000000', backgroundColor: '#ffffff', padding: '8px' }}>
                         <Input
                           type="number"
                           min="0"
                           value={data.maleCount || ''}
                           onChange={(e) => updateStudentData(index, 'maleCount', parseInt(e.target.value) || 0)}
                           className="text-center"
+                          style={{ border: 'none', background: 'transparent', textAlign: 'center', width: '100%', fontSize: '14px' }}
                         />
                       </td>
-                      <td className="border border-border p-2 text-center bg-muted">
+                      <td className="p-2 text-center" style={{ border: '1px solid #000000', backgroundColor: '#e5e7eb', fontWeight: 'bold', padding: '8px', fontSize: '14px' }}>
                         {data.totalCount}
                       </td>
-                      <td className="border border-border p-2">
+                      <td className="p-2" style={{ border: '1px solid #000000', backgroundColor: '#ffffff', padding: '8px' }}>
                         <Input
                           type="number"
                           min="0"
                           max={data.femaleCount}
                           value={data.femaleSignOut || ''}
                           onChange={(e) => updateStudentData(index, 'femaleSignOut', parseInt(e.target.value) || 0)}
+                          disabled={data.totalCount <= 0}
                           className="text-center"
+                          style={{ border: 'none', background: 'transparent', textAlign: 'center', width: '100%', fontSize: '14px' }}
                         />
                       </td>
-                      <td className="border border-border p-2">
+                      <td className="p-2" style={{ border: '1px solid #000000', backgroundColor: '#ffffff', padding: '8px' }}>
                         <Input
                           type="number"
                           min="0"
                           max={data.maleCount}
                           value={data.maleSignOut || ''}
                           onChange={(e) => updateStudentData(index, 'maleSignOut', parseInt(e.target.value) || 0)}
+                          disabled={data.totalCount <= 0}
                           className="text-center"
+                          style={{ border: 'none', background: 'transparent', textAlign: 'center', width: '100%', fontSize: '14px' }}
                         />
                       </td>
-                      <td className="border border-border p-2">
+                      <td className="p-2" style={{ border: '1px solid #000000', backgroundColor: '#ffffff', padding: '8px' }}>
                         <Input
                           type="number"
-                            value={data.femaleRemaining !== undefined ? data.femaleRemaining : ''}
-                            onChange={(e) => updateStudentData(index, 'femaleRemaining', parseInt(e.target.value) || 0)}
-                            className="text-center text-lg px-3 py-2 bg-white"
-                            style={{ minWidth: 160, width: '100%', maxWidth: 200 }}
+                          min="0"
+                          max={data.femaleCount}
+                          value={data.femaleEmergencyStay || ''}
+                          onChange={(e) => updateStudentData(index, 'femaleEmergencyStay', parseInt(e.target.value) || 0)}
+                          disabled={data.totalCount <= 0}
+                          className="text-center"
+                          style={{ border: 'none', background: 'transparent', textAlign: 'center', width: '100%', fontSize: '14px' }}
                         />
                       </td>
-                      <td className="border border-border p-2">
+                      <td className="p-2" style={{ border: '1px solid #000000', backgroundColor: '#ffffff', padding: '8px' }}>
                         <Input
                           type="number"
-                            value={data.maleRemaining !== undefined ? data.maleRemaining : ''}
-                            onChange={(e) => updateStudentData(index, 'maleRemaining', parseInt(e.target.value) || 0)}
-                            className="text-center text-lg px-3 py-2 bg-white"
-                            style={{ minWidth: 160, width: '100%', maxWidth: 200 }}
+                          min="0"
+                          max={data.maleCount}
+                          value={data.maleEmergencyStay || ''}
+                          onChange={(e) => updateStudentData(index, 'maleEmergencyStay', parseInt(e.target.value) || 0)}
+                          disabled={data.totalCount <= 0}
+                          className="text-center"
+                          style={{ border: 'none', background: 'transparent', textAlign: 'center', width: '100%', fontSize: '14px' }}
                         />
                       </td>
-                      <td className="border border-border p-2 text-center bg-muted">
-                        {data.femaleRemaining}
+                      <td className="p-2" style={{ border: '1px solid #000000', backgroundColor: '#ffffff', padding: '8px' }}>
+                        <Input
+                          type="number"
+                          min="0"
+                          max={data.femaleCount}
+                          value={data.femaleNotStayingOut || ''}
+                          onChange={(e) => updateStudentData(index, 'femaleNotStayingOut', parseInt(e.target.value) || 0)}
+                          disabled={data.totalCount <= 0}
+                          className="text-center"
+                          style={{ border: 'none', background: 'transparent', textAlign: 'center', width: '100%', fontSize: '14px' }}
+                        />
                       </td>
-                      <td className="border border-border p-2 text-center bg-muted">
-                        {data.maleRemaining}
+                      <td className="p-2" style={{ border: '1px solid #000000', backgroundColor: '#ffffff', padding: '8px' }}>
+                        <Input
+                          type="number"
+                          min="0"
+                          max={data.maleCount}
+                          value={data.maleNotStayingOut || ''}
+                          onChange={(e) => updateStudentData(index, 'maleNotStayingOut', parseInt(e.target.value) || 0)}
+                          disabled={data.totalCount <= 0}
+                          className="text-center"
+                          style={{ border: 'none', background: 'transparent', textAlign: 'center', width: '100%', fontSize: '14px' }}
+                        />
                       </td>
-                      <td className="border border-border p-2 text-center bg-muted font-bold">
-                        {data.femaleRemaining + data.maleRemaining}
+                      <td className="p-2 text-center font-bold" style={{ border: '1px solid #000000', backgroundColor: '#d1d5db', fontWeight: 'bold', padding: '8px', fontSize: '14px' }}>
+                        {Number(data.femaleNotStayingOut || 0) + Number(data.maleNotStayingOut || 0)}
                       </td>
                       </motion.tr>
                   ))}
@@ -667,37 +977,38 @@ const ReportForm = () => {
                       variants={tableRowVariants}
                       initial="hidden"
                       animate="visible"
+                      style={{ backgroundColor: '#e5e7eb' }}
                     >
-                    <td className="border border-border p-2 text-center">รวม</td>
-                    <td className="border border-border p-2 text-center">
-                      {studentData.reduce((sum, data) => sum + data.femaleCount, 0)}
+                    <td className="p-2 text-center" style={{ border: '1px solid #000000', backgroundColor: '#e5e7eb', fontWeight: 'bold', padding: '8px', fontSize: '14px' }}>รวม</td>
+                    <td className="p-2 text-center" style={{ border: '1px solid #000000', backgroundColor: '#e5e7eb', fontWeight: 'bold', padding: '8px', fontSize: '14px' }}>
+                      {studentData.reduce((sum, data) => sum + Number(data.femaleCount || 0), 0)}
                     </td>
-                    <td className="border border-border p-2 text-center">
-                      {studentData.reduce((sum, data) => sum + data.maleCount, 0)}
+                    <td className="p-2 text-center" style={{ border: '1px solid #000000', backgroundColor: '#e5e7eb', fontWeight: 'bold', padding: '8px', fontSize: '14px' }}>
+                      {studentData.reduce((sum, data) => sum + Number(data.maleCount || 0), 0)}
                     </td>
-                    <td className="border border-border p-2 text-center">
-                      {studentData.reduce((sum, data) => sum + data.totalCount, 0)}
+                    <td className="p-2 text-center" style={{ border: '1px solid #000000', backgroundColor: '#e5e7eb', fontWeight: 'bold', padding: '8px', fontSize: '14px' }}>
+                      {studentData.reduce((sum, data) => sum + Number(data.totalCount || 0), 0)}
                     </td>
-                    <td className="border border-border p-2 text-center">
-                      {studentData.reduce((sum, data) => sum + data.femaleSignOut, 0)}
+                    <td className="p-2 text-center" style={{ border: '1px solid #000000', backgroundColor: '#e5e7eb', fontWeight: 'bold', padding: '8px', fontSize: '14px' }}>
+                      {studentData.reduce((sum, data) => sum + Number(data.femaleSignOut || 0), 0)}
                     </td>
-                    <td className="border border-border p-2 text-center">
-                      {studentData.reduce((sum, data) => sum + data.maleSignOut, 0)}
+                    <td className="p-2 text-center" style={{ border: '1px solid #000000', backgroundColor: '#e5e7eb', fontWeight: 'bold', padding: '8px', fontSize: '14px' }}>
+                      {studentData.reduce((sum, data) => sum + Number(data.maleSignOut || 0), 0)}
                     </td>
-                    <td className="border border-border p-2 text-center">
-                      {studentData.reduce((sum, data) => sum + (data.femaleNotStayingOut || 0), 0)}
+                    <td className="p-2 text-center" style={{ border: '1px solid #000000', backgroundColor: '#e5e7eb', fontWeight: 'bold', padding: '8px', fontSize: '14px' }}>
+                      {studentData.reduce((sum, data) => sum + Number(data.femaleEmergencyStay || 0), 0)}
                     </td>
-                    <td className="border border-border p-2 text-center">
-                      {studentData.reduce((sum, data) => sum + (data.maleNotStayingOut || 0), 0)}
+                    <td className="p-2 text-center" style={{ border: '1px solid #000000', backgroundColor: '#e5e7eb', fontWeight: 'bold', padding: '8px', fontSize: '14px' }}>
+                      {studentData.reduce((sum, data) => sum + Number(data.maleEmergencyStay || 0), 0)}
                     </td>
-                    <td className="border border-border p-2 text-center">
-                      {studentData.reduce((sum, data) => sum + data.femaleRemaining, 0)}
+                    <td className="p-2 text-center" style={{ border: '1px solid #000000', backgroundColor: '#e5e7eb', fontWeight: 'bold', padding: '8px', fontSize: '14px' }}>
+                      {studentData.reduce((sum, data) => sum + Number(data.femaleNotStayingOut || 0), 0)}
                     </td>
-                    <td className="border border-border p-2 text-center">
-                      {studentData.reduce((sum, data) => sum + data.maleRemaining, 0)}
+                    <td className="p-2 text-center" style={{ border: '1px solid #000000', backgroundColor: '#e5e7eb', fontWeight: 'bold', padding: '8px', fontSize: '14px' }}>
+                      {studentData.reduce((sum, data) => sum + Number(data.maleNotStayingOut || 0), 0)}
                     </td>
-                    <td className="border border-border p-2 text-center">
-                      {studentData.reduce((sum, data) => sum + data.femaleRemaining + data.maleRemaining, 0)}
+                    <td className="p-2 text-center" style={{ border: '1px solid #000000', backgroundColor: '#e5e7eb', fontWeight: 'bold', padding: '8px', fontSize: '14px' }}>
+                      {studentData.reduce((sum, data) => sum + Number(data.femaleNotStayingOut || 0) + Number(data.maleNotStayingOut || 0), 0)}
                     </td>
                     </motion.tr>
                 </tbody>
@@ -857,71 +1168,7 @@ const ReportForm = () => {
         </Card>
         </motion.div>
 
-        {/* Signatures */}
-        <motion.div variants={cardVariants}>
-        <Card className="mb-6 shadow-elegant">
-          <CardHeader>
-            <CardTitle className="text-center">ลายเซ็นผู้รับผิดชอบ</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center mb-8">
-              <p className="text-lg font-medium">จึงเรียนมาเพื่อโปรดทราบ</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="teacherSignature">ลายเซ็นอาจารย์เวร</Label>
-                  <Input
-                    id="teacherSignature"
-                    placeholder="ชื่อเซ็น"
-                    value={reportData.teacherSignature}
-                    onChange={(e) => setReportData(prev => ({ ...prev, teacherSignature: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="teacherPosition">ตำแหน่ง</Label>
-                  <Input
-                    id="teacherPosition"
-                    placeholder="ตำแหน่ง"
-                    value={reportData.teacherPosition}
-                    onChange={(e) => setReportData(prev => ({ ...prev, teacherPosition: e.target.value }))}
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <p className="text-sm text-center">(นางวิไลพร พลสูงเนิน)</p>
-                <p className="text-sm text-center font-medium">หัวหน้ากิจการนักศึกษา</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-              <div>
-                <Label htmlFor="deputyDirectorSignature">รองผู้อำนวยการด้านกิจการนักศึกษา</Label>
-                <Input
-                  id="deputyDirectorSignature"
-                  placeholder="ลายเซ็น"
-                  value={reportData.deputyDirectorSignature}
-                  onChange={(e) => setReportData(prev => ({ ...prev, deputyDirectorSignature: e.target.value }))}
-                />
-                <p className="text-sm text-center mt-2">(ผศ.ดร.รัตติกร เมืองนาง)</p>
-              </div>
-              
-              <div>
-                <Label htmlFor="directorSignature">ผู้อำนวยการวิทยาลัยพยาบาลบรมราชชนนี อุดรธานี</Label>
-                <Input
-                  id="directorSignature"
-                  placeholder="ลายเซ็น"
-                  value={reportData.directorSignature}
-                  onChange={(e) => setReportData(prev => ({ ...prev, directorSignature: e.target.value }))}
-                />
-                <p className="text-sm text-center mt-2">(ผศ.ดร.ยุพาภรณ์ ติรไพรวงศ์)</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        </motion.div>
+        
 
         {/* Save Button */}
         <motion.div 
@@ -931,10 +1178,10 @@ const ReportForm = () => {
           <Button 
             onClick={handleSave}
             size="lg"
-            className="bg-gradient-primary hover:opacity-90 shadow-glow"
+            className="bg-gradient-primary hover:opacity-90 shadow-glow text-blue-600"
           >
             <Save className="w-5 h-5 mr-2" />
-            บันทึกรายงาน
+            {isEditing ? 'อัปเดตรายงาน' : 'บันทึกรายงาน'}
           </Button>
         </motion.div>
       </div>
